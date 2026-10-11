@@ -386,6 +386,10 @@ class Workspace:
                     "label": str(model.classes_[p.argmax()]),
                     "score": float(p.max()),
                     "abstained": bool(p.max() < chosen["abstain_below"]),
+                    "probabilities": {
+                        str(label): float(probability)
+                        for label, probability in zip(model.classes_, p, strict=True)
+                    },
                 }
                 for p in probabilities
             ],

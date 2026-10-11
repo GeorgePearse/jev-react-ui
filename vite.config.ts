@@ -63,6 +63,12 @@ export default defineConfig(({ mode }) => {
     },
   }],
   server: {
+    proxy: {
+      '/__modelmode': {
+        target: 'http://127.0.0.1:8765',
+        rewrite: path => path.replace(/^\/__modelmode/, ''),
+      },
+    },
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',

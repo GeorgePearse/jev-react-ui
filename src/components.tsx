@@ -25,11 +25,11 @@ const optionDescriptions = (options: readonly SmartOption[], descriptions?: Reco
 }));
 const stateText = (text?: string, value?: string, children?: React.ReactNode) => text ?? value ?? (typeof children === 'string' ? children : '');
 
-function ChoiceWidget({ text, value, children, options, descriptions, question, label, onSelect, debounceMs, className, disabled }: SmartChoiceProps & { name: string }) {
+function ChoiceWidget({ name, text, value, children, options, descriptions, question, label, onSelect, debounceMs, className, disabled }: SmartChoiceProps & { name: string }) {
   const state = stateText(text, value, children);
   const normalized = options.map(optionValue);
   const descriptionMap = optionDescriptions(options, descriptions);
-  const decision = useDecision<Extract<DecisionAnswer, {type:'choice'}>>(state, 'value', {
+  const decision = useDecision<Extract<DecisionAnswer, {type:'choice'}>>(state, name, {
     type: 'choice', instructions: question ?? label ?? 'Which option best matches the input?', options: normalized, descriptions: descriptionMap,
   }, !!state && options.length > 1, debounceMs);
   const selected = value && normalized.includes(value) ? value : decision.result?.choice ?? '';
@@ -41,7 +41,7 @@ function ChoiceWidget({ text, value, children, options, descriptions, question, 
       {options.map((option) => { const v = optionValue(option); return <option key={v} value={v}>{optionLabel(option)}</option>; })}
     </select>
     {decision.status === 'error' && <span role="alert" className="smart-error">{decision.error?.message}</span>}
-    {decision.result && <small className="smart-confidence">{Math.round(decision.result.confidence * 100)}% model confidence</small>}
+    {decision.result && <small className="smart-confidence">{Math.round(decision.result.confidence * 100)}% {decision.result.source === 'modelmode' ? 'class score · not calibrated confidence' : 'model confidence'}{decision.result.latencyMs !== undefined ? ` · ${decision.result.latencyMs.toFixed(1)} ms` : ''}</small>}
   </div>;
 }
 

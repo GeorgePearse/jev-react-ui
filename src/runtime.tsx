@@ -6,7 +6,7 @@ export type ChoiceQuestion = { type: 'choice'; instructions: string; options: re
 export type YesNoQuestion = { type: 'noul'; instructions: string };
 export type RatingQuestion = { type: 'score'; instructions: string; options: readonly string[] };
 export type DecisionQuestion = ChoiceQuestion | YesNoQuestion | RatingQuestion;
-export type DecisionAnswer = { type: 'choice'; choice: string; confidence: number; probabilities: Record<string, number> }
+export type DecisionAnswer = { type: 'choice'; choice: string; confidence: number; probabilities: Record<string, number>; source?: 'modelmode'; latencyMs?: number }
   | { type: 'noul'; answer: boolean; probability: number; confidence: number }
   | { type: 'score'; score: number; normalized: number; level: string; confidence: number; probabilities: Record<string, number> };
 
@@ -16,6 +16,69 @@ export interface DecisionRuntime {
 
 export interface GenerateOptions { instruction: string; maxNewTokens?: number }
 export interface GenerationRuntime { generate(text: string, options: GenerateOptions): Promise<string> }
+
+export type ModelModeRuntimeOptions = {
+  /** Same-origin proxy prefix; the Vite demo forwards it to the loopback Python service. */
+  endpoint?: string;
+  /** Map React question IDs to published ModelMode capability names when they differ. */
+  capabilityMap?: Record<string, string>;
+};
+
+type ModelModeCapability = { name: string; version: number; labels: string[] };
+
+/** Adapt published local ModelMode classifiers to the React decision component contract. */
+export function createModelModeRuntime({ endpoint = '/__modelmode', capabilityMap = {} }: ModelModeRuntimeOptions = {}): DecisionRuntime {
+  let capabilitiesPromise: Promise<ModelModeCapability[]> | undefined;
+  const capabilities = () => capabilitiesPromise ??= fetch(`${endpoint}/capabilities`)
+    .then(async response => {
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? 'Could not load ModelMode capabilities.');
+      return body.capabilities as ModelModeCapability[];
+    });
+
+  return {
+    async decide(state, questions) {
+      const available = await capabilities();
+      const pending = Object.entries(questions).map(async ([id, question]) => {
+        const name = capabilityMap[id] ?? id;
+        const capability = available.find(item => item.name === name);
+        if (!capability) throw new Error(`No local ModelMode capability “${name}” is published yet.`);
+        if (question.type === 'choice' && capability.labels.some(label => !question.options.includes(label))) {
+          throw new Error(`Capability “${name}” has labels outside this control’s allowed options.`);
+        }
+        if (question.type === 'noul' && !['yes', 'no', 'true', 'false'].every(label => capability.labels.some(value => value.toLowerCase() === label))) {
+          throw new Error(`Capability “${name}” must be trained with yes/no or true/false labels for this check.`);
+        }
+        if (question.type === 'score' && capability.labels.some(label => !question.options.includes(label))) {
+          throw new Error(`Capability “${name}” has score labels outside this control’s scale.`);
+        }
+        const response = await fetch(`${endpoint}/predict`, {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name, version: capability.version, examples: [state] }),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error ?? `ModelMode prediction failed (${response.status})`);
+        const prediction = body.predictions[0] as { label: string; score: number; abstained: boolean; probabilities: Record<string, number> };
+        if (prediction.abstained) throw new Error(`ModelMode abstained on “${name}”; send this example for review.`);
+        const latencyMs = Number(body.elapsed_ms);
+        if (question.type === 'choice') {
+          const probabilities = Object.fromEntries(question.options.map(option => [option, prediction.probabilities[option] ?? 0]));
+          return [id, { type: 'choice', choice: prediction.label, confidence: prediction.score, probabilities, source: 'modelmode', latencyMs } satisfies DecisionAnswer];
+        }
+        if (question.type === 'noul') {
+          const yes = capability.labels.find(label => ['yes', 'true'].includes(label.toLowerCase()))!;
+          const probability = prediction.probabilities[yes] ?? prediction.score;
+          return [id, { type: 'noul', answer: probability >= 0.5, probability, confidence: Math.max(probability, 1 - probability) } satisfies DecisionAnswer];
+        }
+        const probabilities = Object.fromEntries(question.options.map(option => [option, prediction.probabilities[option] ?? 0]));
+        const score = question.options.reduce((sum, option, index) => sum + index * probabilities[option], 0);
+        const level = question.options[Math.round(score)] ?? prediction.label;
+        return [id, { type: 'score', score, normalized: question.options.length > 1 ? score / (question.options.length - 1) : 0, level, confidence: prediction.score, probabilities } satisfies DecisionAnswer];
+      });
+      return Object.fromEntries(await Promise.all(pending));
+    },
+  };
+}
 
 /** Calls the gallery's same-origin proxy. Keep the actual API key in its server environment. */
 export function createJevApiRuntime(endpoint = '/__jev/decide', model = 'jev-latest'): DecisionRuntime {

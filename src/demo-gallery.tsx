@@ -7,7 +7,7 @@ import {
   SmartIcon, SmartInput, SmartMention, SmartNotification, SmartNumber, SmartPriority,
   SmartRoute, SmartSearch, SmartSentiment, SmartSort, SmartStatus, SmartSummary,
   SmartTags, SmartTextarea, SmartTitle, SmartTooltip, SmartUnit, SmartValidation,
-  createJevApiRuntime,
+  createJevApiRuntime, createModelModeRuntime,
 } from './index';
 import './demo.css';
 import './gallery.css';
@@ -62,7 +62,7 @@ const generators = {
 type Demo = { title: string; group: string; description: string; render: () => React.ReactNode; generate?: boolean; hover?: boolean };
 const demos: Record<string, Demo> = {
   SmartAutocomplete: { title: 'Smart autocomplete', group: 'Text inputs', description: 'Suggests a relevant completion from the full input.', render: () => <SmartAutocomplete text="The production database" options={['is down', 'is healthy', 'needs maintenance']} /> },
-  EmojiPicker: { title: 'Emoji picker', group: 'Text inputs', description: 'Chooses an emoji for a message’s intent.', render: () => <EmojiPicker text={text} /> },
+  EmojiPicker: { title: 'Emoji picker', group: 'Text inputs', description: 'Chooses an emoji for a message’s intent.', render: () => <EmojiPicker text={text} options={['😂','❤️','😢','😡','🤔','🙏','🎉','👍']} /> },
   SmartTextarea: { title: 'Smart textarea', group: 'Text inputs', description: 'Rewrites text when you choose an editing action.', render: () => <SmartTextarea value={text} onChange={() => {}} actions={['shorten', 'make friendlier']} />, generate: true },
   SmartTags: { title: 'Smart tags', group: 'Text inputs', description: 'Selects all matching tags in one decision batch.', render: () => <SmartTags text={text} tags={tags} /> },
   SmartMention: { title: 'Smart mention', group: 'Text inputs', description: 'Resolves a reference against the people or projects you provide.', render: () => <SmartMention text="Please ask Alex to check the database incident." options={['Alex Chen', 'Alex Rivera', 'Platform team']} /> },
@@ -74,7 +74,7 @@ const demos: Record<string, Demo> = {
   SmartPriority: { title: 'Smart priority', group: 'Classification', description: 'Estimates task urgency from a bounded priority scale.', render: () => <SmartPriority text={text} /> },
   SmartStatus: { title: 'Smart status', group: 'Classification', description: 'Maps a description to a workflow status.', render: () => <SmartStatus text="We are investigating the production outage." /> },
   SmartRoute: { title: 'Smart route', group: 'Classification', description: 'Selects the next handler from your allowed routes.', render: () => <SmartRoute text={text} options={['page on-call', 'create bug', 'notify support']} /> },
-  SmartSentiment: { title: 'Smart sentiment', group: 'Classification', description: 'Classifies the message’s emotional tone.', render: () => <SmartSentiment text="I have been locked out all morning. This is very frustrating." /> },
+  SmartSentiment: { title: 'Smart sentiment', group: 'Classification', description: 'Classifies the message’s emotional tone.', render: () => <SmartSentiment text="I have been locked out all morning. This is very frustrating." options={['very negative','negative','neutral','positive','very positive']} /> },
   SmartAssignee: { title: 'Smart assignee', group: 'Classification', description: 'Ranks candidate owners using the task and supplied context.', render: () => <SmartAssignee text="Investigate a database outage" options={['Platform', 'Web', 'Support']} /> },
   SmartEnum: { title: 'Smart enum', group: 'Classification', description: 'Maps free-form language to an allowed value.', render: () => <SmartEnum text="The login page crashes on Safari" options={['bug', 'feature', 'improvement', 'question']} /> },
   SmartDatePicker: { title: 'Smart date picker', group: 'Data entry', description: 'Interprets a natural-language date when requested.', render: () => <SmartDatePicker text="next Thursday afternoon" onSelect={() => {}} />, generate: true },
@@ -97,18 +97,23 @@ const demos: Record<string, Demo> = {
 function Gallery() {
   const initial = new URLSearchParams(location.search).get('component') ?? 'EmojiPicker';
   const [selected, setSelected] = useState(demos[initial] ? initial : 'EmojiPicker');
-  const [backend, setBackend] = useState<'preview' | 'jev'>('preview');
+  const [backend, setBackend] = useState<'preview' | 'jev' | 'modelmode'>('preview');
   const [jevConfigured, setJevConfigured] = useState(false);
+  const [modelModeCapabilities, setModelModeCapabilities] = useState<string[]>([]);
   useEffect(() => { fetch('/__jev/status').then(r => r.json()).then(data => setJevConfigured(data.configured)).catch(() => {}); }, []);
+  useEffect(() => { fetch('/__modelmode/capabilities').then(r => r.json()).then(data => setModelModeCapabilities((data.capabilities ?? []).map((capability: { name: string }) => capability.name))).catch(() => setModelModeCapabilities([])); }, []);
   useEffect(() => { const url = new URL(location.href); url.searchParams.set('component', selected); history.replaceState({}, '', url); }, [selected]);
-  const decision = useMemo(() => backend === 'jev' ? createJevApiRuntime() : fixtures, [backend]);
+  const decision = useMemo(() => backend === 'jev' ? createJevApiRuntime() : backend === 'modelmode' ? createModelModeRuntime() : fixtures, [backend]);
+  const modelModeCapability = ({ EmojiPicker: 'emoji', SmartPriority: 'priority', SmartCategory: 'category', SmartSentiment: 'sentiment' } as Record<string, string>)[selected];
+  const modelModeReady = Boolean(modelModeCapability && modelModeCapabilities.includes(modelModeCapability));
+  useEffect(() => { if (backend === 'modelmode' && !modelModeReady) setBackend('preview'); }, [backend, modelModeReady]);
   const demo = demos[selected];
   return <JevProvider decision={decision} generation={generators}>
     <main className="gallery-shell" data-demo-component={selected} data-demo-backend={backend}>
-      <header className="gallery-head"><div><span className="eyebrow">JEV REACT UI · COMPONENT TOUR</span><h1>{demo.title}</h1><p className="lede">{demo.description}</p></div><label className="backend-control">Decision backend<select value={backend} onChange={e => setBackend(e.target.value as 'preview' | 'jev')}><option value="preview">Preview fixture (no API call)</option><option value="jev" disabled={!jevConfigured}>Jev API {!jevConfigured ? '(set server key first)' : ''}</option></select></label></header>
+      <header className="gallery-head"><div><span className="eyebrow">JEV REACT UI · COMPONENT TOUR</span><h1>{demo.title}</h1><p className="lede">{demo.description}</p></div><label className="backend-control">Decision backend<select value={backend} onChange={e => setBackend(e.target.value as 'preview' | 'jev' | 'modelmode')}><option value="preview">Preview fixture (no API call)</option><option value="jev" disabled={!jevConfigured}>Jev API {!jevConfigured ? '(set server key first)' : ''}</option><option value="modelmode" disabled={!modelModeReady}>ModelMode local classifier {!modelModeReady ? '(publish this component first)' : ''}</option></select></label></header>
       <nav className="gallery-nav" aria-label="Components">{Object.keys(demos).map(name => <button key={name} type="button" className={selected === name ? 'active' : ''} onClick={() => setSelected(name)}>{name}</button>)}</nav>
-      <section className="gallery-stage"><div className="stage-meta"><span>{demo.group}</span><span>{backend === 'jev' ? 'Actual Jev API' : 'Preview fixture data'}</span></div><div className="stage-widget">{demo.render()}</div></section>
-      <p className="gallery-note">The preview backend uses sample responses so the interaction is visible without model downloads. Select the Jev API backend to make real decisions; its API key stays on the server.</p>
+      <section className="gallery-stage"><div className="stage-meta"><span>{demo.group}</span><span>{backend === 'jev' ? 'Actual Jev API' : backend === 'modelmode' ? 'ModelMode · local classifier' : 'Preview fixture data'}</span></div><div className="stage-widget">{demo.render()}</div></section>
+      <p className="gallery-note">Preview uses sample responses. Jev calls the hosted API through a server-side key. ModelMode runs a trained, published classifier locally; only EmojiPicker, SmartPriority, SmartCategory and SmartSentiment have matching sample classifiers.</p>
     </main>
   </JevProvider>;
 }

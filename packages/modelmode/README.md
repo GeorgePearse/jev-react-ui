@@ -118,3 +118,21 @@ automatically when the search succeeds; `--no-final-test` leaves it closed.
 Source is baked into the Modal image. Redeploy after updating this package: the
 worker checks the caller's implementation hash before training and result import
 checks it again. This avoids silently reusing a worker with an older implementation.
+
+## Intelligent-components gallery
+
+The React gallery can call immutable, published ModelMode capabilities through a
+loopback-only HTTP bridge. Train the sample classifiers locally (no hosted
+inference or Modal account is used):
+
+```sh
+uv run python examples/ui_components.py --root /tmp/modelmode-ui-demo
+uv run modelmode-serve --root /tmp/modelmode-ui-demo --port 8765
+```
+
+In another terminal, run the repository's `npm run dev`. Its `/__modelmode`
+proxy forwards to `127.0.0.1:8765`. Choose ModelMode in the Decision backend
+menu for EmojiPicker, SmartPriority, SmartCategory, or SmartSentiment. Capability
+labels must match each control's bounded options. These small authored datasets
+are integration fixtures, not production-ready classifiers. The bridge binds
+only to loopback and loads trusted artifacts from the explicitly supplied workspace.
