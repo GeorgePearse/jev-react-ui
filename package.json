@@ -30,7 +30,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "record:demos": "node scripts/record-demos.mjs"
+    "record:demos": "node scripts/record-demos.mjs",
+    "gifs:demos": "node scripts/create-demo-gifs.mjs"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

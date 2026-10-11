@@ -53,7 +53,15 @@ The playground shows emoji choice, task priority, category, enum selection, mult
 
 Run `npm run dev`, then open `/demos.html`. The tour previews every component with fixture results and can optionally call the hosted Jev API. For real calls, copy `.env.example` to `.env.local`, set `JEV_API_KEY` there, then restart Vite. The demo proxy keeps that key on the server and sends state to the selected API; set `JEV_API_BASE_URL` if your key belongs to another Jev-compatible endpoint. Never add a key to client code or commit it. The exported `createJevApiRuntime()` expects a same-origin server proxy in a deployed app; Vite's proxy is for local demos only.
 
-Each component has a short WebM clip in [`demos/videos`](demos/videos). Regenerate them with `npm run record:demos`; set `CHROME_PATH` if Chrome is installed elsewhere. The clips use fixture responses by default, so recording makes no API calls.
+All 31 components have [animated GIF previews](demos/README.md) and [WebM recordings](demos/videos). Regenerate the recordings with `npm run record:demos`, then run `npm run gifs:demos` (requires FFmpeg); set `CHROME_PATH` if Chrome is installed elsewhere. The recordings use fixture responses and make no API calls.
+
+| Emoji picker | Task priority |
+| --- | --- |
+| ![Emoji picker demo](demos/gifs/emoji-picker.gif) | ![Task priority demo](demos/gifs/smart-priority.gif) |
+
+| Category selection | Sentiment selection |
+| --- | --- |
+| ![Category demo](demos/gifs/smart-category.gif) | ![Sentiment demo](demos/gifs/smart-sentiment.gif) |
 
 ## ModelMode MCP
 
