@@ -55,6 +55,12 @@ Run `npm run dev`, then open `/demos.html`. The tour previews every component wi
 
 Each component has a short WebM clip in [`demos/videos`](demos/videos). Regenerate them with `npm run record:demos`; set `CHROME_PATH` if Chrome is installed elsewhere. The clips use fixture responses by default, so recording makes no API calls.
 
+## ModelMode MCP
+
+This repository also includes the existing agent-oriented ModelMode implementation in [`packages/modelmode`](packages/modelmode/README.md). It exposes dataset creation, bounded model search, evaluation, publication, and prediction as MCP tools and a Python API. Agents supply examples and judge model failures; the server handles training and lifecycle controls. Its independent Apache-2.0 license is in that package directory.
+
+Start with the package README. In brief, Python 3.12+ and `uv` are required. Local-only baselines need `uv pip install -e '.[dev]'`; transformer fine-tuning and Modal require the corresponding optional dependencies and Modal setup. Modal training uses paid cloud compute. Configure an MCP host to launch `modelmode-mcp --root /absolute/trusted/workspace`; keep its workspace trusted because published artifacts use joblib. The React components and ModelMode MCP are separate integration surfaces: an agent can use the MCP to train and validate a classifier, then inject a compatible predictor through `JevProvider`'s `DecisionRuntime` interface.
+
 ## Development
 
 ```sh
