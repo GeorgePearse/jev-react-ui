@@ -27,7 +27,7 @@ export function Composer() {
 }
 ```
 
-The default decision model is `kev-0.6b` from the open-jev ecosystem. It downloads its quantized weights once and keeps them in the browser cache. Set `device` and `dtype` in `JevProvider` to configure inference, or pass your own `DecisionRuntime`/`GenerationRuntime` to connect another local model. Generative controls use a separate lazy Transformers.js pipeline; the default is Liquid AI's `LFM2.5-230M-ONNX` Q4 model and it only loads when you invoke a generation action. The separately tested `d1-omni-600M` browser prototype is not yet wired into this package; pass it through the runtime interface when integrating it.
+The default decision model is `kev-0.6b` from the open-jev ecosystem. It downloads its quantized weights once and keeps them in the browser cache. Set `device` and `dtype` in `JevProvider` to configure inference, or pass your own `DecisionRuntime`/`GenerationRuntime` to connect another local model. Generative controls use a separate lazy Transformers.js pipeline; the default is Liquid AI's `LFM2.5-230M-ONNX` Q4 model and it only loads when you invoke a generation action. The live demo includes a `d1-omni-600M` worker adapter; use the runtime interface when integrating another model.
 
 ## Component set
 
@@ -36,32 +36,41 @@ The default decision model is `kev-0.6b` from the open-jev ecosystem. It downloa
 | Text inputs | `SmartAutocomplete`, `EmojiPicker`, `SmartTextarea`, `SmartTags`, `SmartMention`, `SmartSearch`, `SmartInput` |
 | Selection and classification | `SmartIcon`, `SmartColor`, `SmartCategory`, `SmartPriority`, `SmartStatus`, `SmartRoute`, `SmartSentiment`, `SmartAssignee`, `SmartEnum` |
 | Data entry | `SmartDatePicker`, `SmartAddress`, `SmartNumber`, `SmartUnit`, `SmartForm`, `SmartValidation`, `SmartColumnMapper` |
-| Display | `SmartTitle`, `SmartSummary`, `SmartHighlight`, `SmartTooltip`, `SmartEmptyState`, `SmartNotification`, `SmartDiff`, `SmartSort` |
+| Display | `SmartTitle`, `SmartSummary`, `SmartHighlight`, `SmartTooltip`, `SmartEmptyState`, `SmartNotification`, `SmartDiff`, `SmartSort`, `SmartFormat` |
 
 Choice components take `text`, a bounded `options` list, optional option `descriptions`, and an `onSelect` callback. `SmartTags` and `SmartColumnMapper` batch related questions. Data-entry and display components that create text use the optional generator and return suggestions for the caller to review or apply.
 
-## Local playground
+## Three live demos
 
-```sh
-npm install
-npm run dev
+Run `npm install` and `npm run dev`, then open `/demos.html`.
+
+1. **Autoformat:** paste plain text; the model infers titles, section headings, lists, and code languages. `<SmartFormat />` renders your source words, with syntax highlighting, without requiring Markdown markers.
+2. **Live emoji:** type or change a message and watch the selected reaction change with its meaning.
+3. **Inbox routing:** submit customer messages and watch them arrive in Billing, Engineering, or Support.
+
+These demos run real models locally in browser workers. Emoji and routing use Liquid AI's d1-omni-600M. Formatting uses Qwen3 4B through WebLLM, with constrained JSON labels for zero-shot layout and language decisions. Click **Enable on-device model** to download the active model. The formatter requires WebGPU and downloads about 2.2 GB; emoji and routing use a smaller model with a WASM fallback. Model caching depends on available browser storage. No API key is required. Decisions can be wrong; the input remains editable.
+
+GIF previews play at **2× speed**; the [videos](demos/README.md) retain actual inference waits.
+
+![Plain text automatically formatted with inferred structure and highlighted code](demos/featured/autoformat.gif)
+
+| Live emoji | Inbox routing |
+| --- | --- |
+| ![Emoji changes as the message changes](demos/featured/live-emoji.gif) | ![Customer messages reach the correct team](demos/featured/inbox-routing.gif) |
+
+[Watch the three recorded demos](demos/README.md). The recordings use real inference after model initialization; initial downloads are omitted. Run `npm run verify:demos` for the browser checks or `npm run record:featured` to regenerate the GIFs and videos (Chrome and FFmpeg required). Set `DEMO_URL` or `CHROME_PATH` for another server or Chrome installation.
+
+The earlier fixture gallery is available at `/gallery.html`; its [archived recordings](demos/legacy.md) are component previews rather than real model demonstrations. The gallery also supports hosted Jev and ModelMode. For hosted calls, copy `.env.example` to `.env.local`, set `JEV_API_KEY`, and restart Vite. The same-origin proxy keeps the key on the server.
+
+```tsx
+import { JevProvider, SmartFormat } from 'jev-react-ui';
+
+<JevProvider decision={yourDecisionRuntime}>
+  <SmartFormat text={plainText} />
+</JevProvider>
 ```
 
-The playground shows emoji choice, task priority, category, enum selection, multi-label tags, and a text rewrite action. It starts empty, so opening it does not download model files. Typing triggers the decision model; generation weights load only when a rewrite action is invoked. Model files are not included in the package; runtimes download them from Hugging Face on first use.
-
-## Component tour and recorded demos
-
-Run `npm run dev`, then open `/demos.html`. The tour previews every component with fixture results and can optionally call the hosted Jev API. For real calls, copy `.env.example` to `.env.local`, set `JEV_API_KEY` there, then restart Vite. The demo proxy keeps that key on the server and sends state to the selected API; set `JEV_API_BASE_URL` if your key belongs to another Jev-compatible endpoint. Never add a key to client code or commit it. The exported `createJevApiRuntime()` expects a same-origin server proxy in a deployed app; Vite's proxy is for local demos only.
-
-All 31 components have [animated GIF previews](demos/README.md) and [WebM recordings](demos/videos). Regenerate the recordings with `npm run record:demos`, then run `npm run gifs:demos` (requires FFmpeg); set `CHROME_PATH` if Chrome is installed elsewhere. The recordings use fixture responses and make no API calls.
-
-| Emoji picker | Task priority |
-| --- | --- |
-| ![Emoji picker demo](demos/gifs/emoji-picker.gif) | ![Task priority demo](demos/gifs/smart-priority.gif) |
-
-| Category selection | Sentiment selection |
-| --- | --- |
-| ![Category demo](demos/gifs/smart-category.gif) | ![Sentiment demo](demos/gifs/smart-sentiment.gif) |
+`SmartFormat` makes bounded classification calls through `DecisionRuntime`; it never substitutes generated prose for the source. The [demo worker](src/format-model-worker.ts) and [worker adapter](src/demo-model-runtime.ts) show the on-device implementation. Blank lines provide block boundaries. Inputs are limited to 6,000 characters and 16 blocks. Supply a model suited to document classification; the default small model is not a reliable formatter.
 
 ## ModelMode MCP
 
@@ -76,4 +85,4 @@ npm run typecheck
 npm run build
 ```
 
-This is an experimental component set. The 31 component names are implemented, but their usefulness depends on the chosen model and task-specific evaluation. The choice components use bounded decisions; address parsing, dates, generated copy, and other less predictable results are suggestions for people to review before applying. Smart controls trigger inference when their inputs change; applications should debounce and limit model downloads appropriately.
+This is an experimental component set. The original 31 components plus `SmartFormat` are implemented, but their usefulness depends on the chosen model and task-specific evaluation. The choice components use bounded decisions; address parsing, dates, generated copy, and other less predictable results are suggestions for people to review before applying. Smart controls trigger inference when their inputs change; applications should debounce and limit model downloads appropriately.

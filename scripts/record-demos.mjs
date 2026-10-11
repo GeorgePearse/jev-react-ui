@@ -38,7 +38,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, recordVideo: { dir: rawDir, size: { width: 1280, height: 720 } } });
     const page = await context.newPage();
     page.on('pageerror', error => console.error(`${component}: ${error.message}`));
-    await page.goto(`${baseURL}/demos.html?component=${component}&mode=preview`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseURL}/gallery.html?component=${component}&mode=preview`, { waitUntil: 'networkidle' });
     await page.locator(`[data-demo-component="${component}"]`).waitFor();
     await page.waitForTimeout(850);
     if (component === 'SmartTooltip') await page.locator('.tooltip-demo').hover();

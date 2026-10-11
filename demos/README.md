@@ -1,191 +1,29 @@
-# Animated component demos
+# Three live demos
 
-Looping GIF previews of all 31 React components. These recordings use deterministic fixture responses; they demonstrate interactions and do not measure Jev or ModelMode inference quality or latency.
+These recordings show real on-device inference. Model initialization happens before recording; WebM videos retain classification latency. GIF previews play at 2× speed. Samples are ordinary input text, not fixture responses or examples supplied to the model.
 
-Regenerate the videos with `npm run record:demos`, then create the GIFs with `npm run gifs:demos` (requires FFmpeg on PATH). GIFs are 960 pixels wide at 12 frames per second.
+## Plain text → formatted document
 
-### SmartAutocomplete
+Titles, section headings, lists, and syntax-highlighted source code, inferred without Markdown markers. Qwen3 4B through WebLLM chooses constrained document roles and code languages; the renderer preserves the supplied text.
 
-![SmartAutocomplete interaction demo](gifs/smart-autocomplete.gif)
+![Zero-shot autoformat](featured/autoformat.gif)
 
-[Download video](videos/smart-autocomplete.webm)
+[Watch the video](featured/autoformat.webm)
 
-### EmojiPicker
+## A reaction that follows what you type
 
-![EmojiPicker interaction demo](gifs/emoji-picker.gif)
+The message changes from celebration to anger to laughter, and Liquid d1-omni-600M chooses the corresponding emoji.
 
-[Download video](videos/emoji-picker.webm)
+![Live emoji](featured/live-emoji.gif)
 
-### SmartTextarea
+[Watch the video](featured/live-emoji.webm)
 
-![SmartTextarea interaction demo](gifs/smart-textarea.gif)
+## Customer messages → the right team
 
-[Download video](videos/smart-textarea.webm)
+Three different messages are classified by Liquid d1-omni-600M and placed in Billing, Engineering, and Support.
 
-### SmartTags
+![Inbox routing](featured/inbox-routing.gif)
 
-![SmartTags interaction demo](gifs/smart-tags.gif)
+[Watch the video](featured/inbox-routing.webm)
 
-[Download video](videos/smart-tags.webm)
-
-### SmartMention
-
-![SmartMention interaction demo](gifs/smart-mention.gif)
-
-[Download video](videos/smart-mention.webm)
-
-### SmartSearch
-
-![SmartSearch interaction demo](gifs/smart-search.gif)
-
-[Download video](videos/smart-search.webm)
-
-### SmartInput
-
-![SmartInput interaction demo](gifs/smart-input.gif)
-
-[Download video](videos/smart-input.webm)
-
-### SmartIcon
-
-![SmartIcon interaction demo](gifs/smart-icon.gif)
-
-[Download video](videos/smart-icon.webm)
-
-### SmartColor
-
-![SmartColor interaction demo](gifs/smart-color.gif)
-
-[Download video](videos/smart-color.webm)
-
-### SmartCategory
-
-![SmartCategory interaction demo](gifs/smart-category.gif)
-
-[Download video](videos/smart-category.webm)
-
-### SmartPriority
-
-![SmartPriority interaction demo](gifs/smart-priority.gif)
-
-[Download video](videos/smart-priority.webm)
-
-### SmartStatus
-
-![SmartStatus interaction demo](gifs/smart-status.gif)
-
-[Download video](videos/smart-status.webm)
-
-### SmartRoute
-
-![SmartRoute interaction demo](gifs/smart-route.gif)
-
-[Download video](videos/smart-route.webm)
-
-### SmartSentiment
-
-![SmartSentiment interaction demo](gifs/smart-sentiment.gif)
-
-[Download video](videos/smart-sentiment.webm)
-
-### SmartAssignee
-
-![SmartAssignee interaction demo](gifs/smart-assignee.gif)
-
-[Download video](videos/smart-assignee.webm)
-
-### SmartEnum
-
-![SmartEnum interaction demo](gifs/smart-enum.gif)
-
-[Download video](videos/smart-enum.webm)
-
-### SmartDatePicker
-
-![SmartDatePicker interaction demo](gifs/smart-date-picker.gif)
-
-[Download video](videos/smart-date-picker.webm)
-
-### SmartAddress
-
-![SmartAddress interaction demo](gifs/smart-address.gif)
-
-[Download video](videos/smart-address.webm)
-
-### SmartNumber
-
-![SmartNumber interaction demo](gifs/smart-number.gif)
-
-[Download video](videos/smart-number.webm)
-
-### SmartUnit
-
-![SmartUnit interaction demo](gifs/smart-unit.gif)
-
-[Download video](videos/smart-unit.webm)
-
-### SmartForm
-
-![SmartForm interaction demo](gifs/smart-form.gif)
-
-[Download video](videos/smart-form.webm)
-
-### SmartValidation
-
-![SmartValidation interaction demo](gifs/smart-validation.gif)
-
-[Download video](videos/smart-validation.webm)
-
-### SmartColumnMapper
-
-![SmartColumnMapper interaction demo](gifs/smart-column-mapper.gif)
-
-[Download video](videos/smart-column-mapper.webm)
-
-### SmartTitle
-
-![SmartTitle interaction demo](gifs/smart-title.gif)
-
-[Download video](videos/smart-title.webm)
-
-### SmartSummary
-
-![SmartSummary interaction demo](gifs/smart-summary.gif)
-
-[Download video](videos/smart-summary.webm)
-
-### SmartHighlight
-
-![SmartHighlight interaction demo](gifs/smart-highlight.gif)
-
-[Download video](videos/smart-highlight.webm)
-
-### SmartTooltip
-
-![SmartTooltip interaction demo](gifs/smart-tooltip.gif)
-
-[Download video](videos/smart-tooltip.webm)
-
-### SmartEmptyState
-
-![SmartEmptyState interaction demo](gifs/smart-empty-state.gif)
-
-[Download video](videos/smart-empty-state.webm)
-
-### SmartNotification
-
-![SmartNotification interaction demo](gifs/smart-notification.gif)
-
-[Download video](videos/smart-notification.webm)
-
-### SmartDiff
-
-![SmartDiff interaction demo](gifs/smart-diff.gif)
-
-[Download video](videos/smart-diff.webm)
-
-### SmartSort
-
-![SmartSort interaction demo](gifs/smart-sort.gif)
-
-[Download video](videos/smart-sort.webm)
+Run the app with `npm run dev`. Regenerate with `npm run record:featured`; run acceptance checks with `npm run verify:demos`. Chrome and FFmpeg are required. The earlier fixture previews remain in [the archive](legacy.md).

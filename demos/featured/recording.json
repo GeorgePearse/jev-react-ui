@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-10-11T21:38:49.457Z",
+  "inference": "real, on-device",
+  "models": {
+    "format": "Qwen3-4B-q4f16_1-MLC (WebLLM 0.2.86)",
+    "decisions": "d1-omni-600M (ONNX revision 4ebc1b97bf1477485371c79d1cf8d5e4e8eebfa0)"
+  },
+  "modelInitializationOmitted": true,
+  "gifPlaybackSpeed": 2,
+  "videoPlaybackSpeed": 1,
+  "viewport": {
+    "width": 1280,
+    "height": 860
+  },
+  "demos": [
+    {
+      "name": "autoformat",
+      "durationSeconds": 65.557
+    },
+    {
+      "name": "live-emoji",
+      "durationSeconds": 16.746
+    },
+    {
+      "name": "inbox-routing",
+      "durationSeconds": 10.034
+    }
+  ]
+}

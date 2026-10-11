@@ -1,0 +1,38 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {browserOptions,profile,demoUrl,enable,formatScenario,emojiScenario,inboxScenario} from './showcase-scenarios.mjs';
+const context=await chromium.launchPersistentContext(profile,browserOptions);
+const page=context.pages()[0]??await context.newPage(); const errors=[]; const outgoing=[];
+page.on('request',request=>{if(request.method()==='POST')outgoing.push(new URL(request.url()).pathname);});
+page.on('console',message=>{if(/^(FORMAT PLAN|CODE CHECK)/.test(message.text()))console.log(message.text());});
+page.on('requestfailed',request=>console.log('NETWORK',new URL(request.url()).hostname,request.failure()?.errorText));
+page.on('console',message=>{if(['error','warning'].includes(message.type()))console.log('BROWSER',message.text().slice(0,500));});
+page.on('pageerror',error=>errors.push(error.message));
+const progress=setInterval(async()=>console.log('MODEL',await page.locator('.model-control').innerText().catch(()=>'')),30000);
+try {
+  await page.goto(demoUrl,{waitUntil:'domcontentloaded'}); await enable(page); await formatScenario(page);
+  await page.screenshot({path:'/tmp/showcase-format.png',timeout:60000});
+  const input=page.getByRole('textbox',{name:'Plain text to format'});
+  const malicious=(await input.inputValue()).replace('return response.json();', "const html = '<img src=x onerror=window.__formatXSS=1>';\n  return response.json();");
+  await input.fill(malicious);
+  await page.waitForFunction(()=>['ready','error'].includes(document.querySelector('[data-smart-ui="format"]')?.dataset.aiState),null,{timeout:120000});
+  assert.equal(await page.locator('[data-smart-ui="format"]').getAttribute('data-ai-state'),'ready');
+  assert.equal(await page.locator('[data-smart-ui="format"] img').count(),0);
+  assert.equal(await page.evaluate(()=>window.__formatXSS),undefined);
+  assert.ok((await page.locator('[data-smart-ui="format"] code').innerText()).includes('<img src=x'));
+  await input.fill('');
+  await page.locator('[data-smart-ui="format"][data-ai-state="idle"]').waitFor();
+  assert.equal(await page.locator('[data-format-kind]').count(),0);
+  await input.fill('x'.repeat(6001));
+  await page.locator('[data-smart-ui="format"][data-ai-state="error"]').waitFor();
+  assert.match(await page.getByRole('alert').innerText(),/Use up to/);
+  await page.getByRole('button',{name:/Live emoji/}).click(); await enable(page); await emojiScenario(page);
+  await page.screenshot({path:'/tmp/showcase-emoji.png',timeout:60000});
+  await page.getByRole('button',{name:/Inbox routing/}).click(); await inboxScenario(page);
+  await page.screenshot({path:'/tmp/showcase-inbox.png',timeout:60000});
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:'/tmp/showcase-mobile.png',fullPage:true,timeout:60000});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Mobile layout must not overflow horizontally');
+  assert.deepEqual(outgoing,[],'Inference must not send input to an API');
+  assert.deepEqual(errors,[]); console.log('All three real-model demos passed.');
+}finally {clearInterval(progress);await context.close();}

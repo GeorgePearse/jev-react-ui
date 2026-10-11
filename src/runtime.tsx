@@ -190,7 +190,7 @@ export function useAIContext() {
   return context;
 }
 
-export type AsyncState<T> = { status: 'idle' | 'loading' | 'ready' | 'error'; result?: T; error?: Error };
+export type AsyncState<T> = { status: 'idle' | 'loading' | 'ready' | 'error'; result?: T; error?: Error; input?: string };
 
 export function useDecision<T extends DecisionAnswer = DecisionAnswer>(
   state: string,
@@ -210,7 +210,7 @@ export function useDecision<T extends DecisionAnswer = DecisionAnswer>(
       try {
         const runtime = context.decision ?? await context.loadDecision();
         const answers = await runtime.decide(state, { [name]: JSON.parse(questionKey) as DecisionQuestion });
-        if (!stale) setAsyncState({ status: 'ready', result: answers[name] as T });
+        if (!stale) setAsyncState({ status: 'ready', result: answers[name] as T, input: state });
       } catch (e) {
         if (!stale) setAsyncState({ status: 'error', error: e instanceof Error ? e : new Error(String(e)) });
       }
@@ -232,7 +232,7 @@ export function useDecisionBatch(state: string, questions: Record<string, Decisi
       try {
         const runtime = context.decision ?? await context.loadDecision();
         const answers = await runtime.decide(state, JSON.parse(questionKey) as Record<string, DecisionQuestion>);
-        if (!stale) setAsyncState({ status: 'ready', result: answers });
+        if (!stale) setAsyncState({ status: 'ready', result: answers, input: state });
       } catch (e) {
         if (!stale) setAsyncState({ status: 'error', error: e instanceof Error ? e : new Error(String(e)) });
       }
