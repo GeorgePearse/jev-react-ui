@@ -49,6 +49,12 @@ npm run dev
 
 The playground shows emoji choice, task priority, category, enum selection, multi-label tags, and a text rewrite action. It starts empty, so opening it does not download model files. Typing triggers the decision model; generation weights load only when a rewrite action is invoked. Model files are not included in the package; runtimes download them from Hugging Face on first use.
 
+## Component tour and recorded demos
+
+Run `npm run dev`, then open `/demos.html`. The tour previews every component with fixture results and can optionally call the hosted Jev API. For real calls, copy `.env.example` to `.env.local`, set `JEV_API_KEY` there, then restart Vite. The demo proxy keeps that key on the server and sends state to the selected API; set `JEV_API_BASE_URL` if your key belongs to another Jev-compatible endpoint. Never add a key to client code or commit it. The exported `createJevApiRuntime()` expects a same-origin server proxy in a deployed app; Vite's proxy is for local demos only.
+
+Each component has a short WebM clip in [`demos/videos`](demos/videos). Regenerate them with `npm run record:demos`; set `CHROME_PATH` if Chrome is installed elsewhere. The clips use fixture responses by default, so recording makes no API calls.
+
 ## Development
 
 ```sh

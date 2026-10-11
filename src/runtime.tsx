@@ -17,6 +17,21 @@ export interface DecisionRuntime {
 export interface GenerateOptions { instruction: string; maxNewTokens?: number }
 export interface GenerationRuntime { generate(text: string, options: GenerateOptions): Promise<string> }
 
+/** Calls the gallery's same-origin proxy. Keep the actual API key in its server environment. */
+export function createJevApiRuntime(endpoint = '/__jev/decide', model = 'jev-latest'): DecisionRuntime {
+  return {
+    async decide(state, questions) {
+      const response = await fetch(endpoint, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ state, questions, model }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error ?? `Jev API request failed (${response.status})`);
+      return payload.answers as Record<string, DecisionAnswer>;
+    },
+  };
+}
+
 type AIDependencyContext = {
   decision?: DecisionRuntime;
   generation?: GenerationRuntime;
